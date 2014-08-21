@@ -1,0 +1,308 @@
+---
+title       : Guess-the-Torus
+subtitle    : Nonlinear binary classification performance
+author      : Onlineclass
+job         : Data Science specialization student
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : [mathjax]     # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+---
+
+## Application overview
+- '<b><span style = "color:red">Guess-the-Torus</span></b>' is a web application 
+for binary classification performance comparison of several machine learning 
+algorithms    
+- The published web application was developed for a single algorithm but 
+implements the functionality illustrated in this presentation    
+- The web application was developed in R using the '<b>shiny</b>' package and is 
+published at http://onlineclass.shinyapps.io/GuessTheTorus    
+- Following is the sequence of tasks performed by the application:
+    - Generate two data sets (one for model training and one for test)
+    - Plot a sample taken from the training data set
+    - Train several classification models on the training data set and plot the 
+    ROC curves of the model performance estimated on the test data set
+    - Estimate the 'outcome' for the user-specified predictor values using each 
+    of the trained models and compare the predictions with the computed value of 
+    the 'outcome'
+
+
+--- .class #id 
+
+## Data sets
+
+The application generates two data sets, each having 4 columns and a 
+user-specified number rows. The first three columns (labeled 'x', 'y' and 'z') 
+are the Cartesian coordinates of a point in the 3D space and the last column 
+(a factor labeled 'outcome') has a value of 'inside' or 'outside', depending on 
+whether the point is inside or outside of the torus with equation 
+<span style = "color:blue"> $\( R - \sqrt{x ^ 2 + y ^ 2} \) ^ 2 + z ^ 2 = r ^ 2$ 
+</span> and parameters <span style = "color:blue"> $r = 2$,  $R = 8$ </span>
+```{r,results='hide', echo=FALSE, fig.width=14}
+library(plot3D)
+library(scatterplot3d)
+library(MASS)
+par(mfrow = c(1,2))
+
+## Define the torus
+    R = 8
+    r = 2
+
+## Number of plots in the data sets
+    n = 20
+
+## Plot the torus surface using plot3D
+    ## Create the data points in the x,y plane
+    phi_seq <- seq(0, 2 * pi, length.out = 50)
+    theta_seq <- seq(0, 2 * pi, length.out = 50)
+    M <- mesh(phi_seq, theta_seq)
+
+    phi <- M$x
+    theta <- M$y
+
+    ## Compute the (x,y,z) points of the torus surface on the mesh
+    x <- (R + r * cos(phi)) * cos(theta)
+    y <- (R + r * cos(phi)) * sin(theta)
+    z <- r * sin(phi)
+
+    ## Get the xt, yt and zt coordinate matrices
+    xt <- matrix(as.vector(x), nrow = 50)
+    yt <- matrix(as.vector(y), nrow = 50)
+    zt <- matrix(as.vector(z), nrow = 50)
+
+    x.interval <- c(min(xt) - 5, max(xt) + 5)
+    y.interval <- c(min(yt) - 5, max(yt) + 5)
+    z.interval <- c(min(zt) - 5, max(zt) + 5)
+
+    ## Plot the torus
+    surf3D(xt, yt, zt, col = "#FF080888", 
+           lighting = list(ambient = 0.4, diffuse = 0.6, specular = 1., 
+                           exponent = 20, sr = 0, alpha = 0.35), 
+           ltheta = -180, lphi = -20, colkey = F, bty = "b2", scale = F, 
+           zlim = z.interval, xlim = x.interval, ylim = y.interval, 
+           ticktype = "detailed", cex.axis = 0.75, 
+           main = "Torus  with R = 8 and r = 2")
+
+## Function to generate the training and the test data sets
+make.simple.torus.data <- function(R = 8, r = 2, n = 12) {
+    ## Defina the function to test if a point is inside the torus
+    is.inside.torus <- function(x) 
+        ifelse((R - sqrt(x[1] ^ 2 + x[2] ^ 2)) ^ 2 + x[3] ^ 2 < r ^ 2, 1, 0)
+
+    ## Generate n points along each of the axis for the train.set
+    x <- seq(-1.2 * (r + R), 1.2 * (r + R), length.out = n)
+    xsd <- 2.4 * (r + R) / n / 4.5
+    z <- seq(-2 * r, 2 * r, length.out = n)
+    zsd <- 4 * r / n / 5.5
+    set.seed(8443)
+    x.train <- x + c(0, rnorm(n - 2, sd = xsd), 0)
+    y.train <- x + c(0, rnorm(n - 2, sd = xsd), 0)
+    z.train <- z + c(0, rnorm(n - 2, sd = zsd), 0)
+
+    # Sort the data points
+    x.train <- x.train[order(x.train)]
+    y.train <- y.train[order(y.train)]
+    z.train <- z.train[order(z.train)]
+
+    ## Create the mesh for 3D volumes
+    M.train <- mesh(x.train, y.train, z.train)
+
+    ## Create the train data matrix from the mesh and compute the outcome column
+    ## values (by checking if each 3-tuple (x, y and z) is inside the torus)
+    train.mat <- as.matrix(cbind(as.vector(M.train$x), 
+                                 as.vector(M.train$y), 
+                                 as.vector(M.train$z)))
+    train.inside.torus <- as.integer(apply(train.mat, 1, is.inside.torus))
+    train.inside.torus <- as.factor(ifelse(train.inside.torus > 0, "inside", 
+                                           "outside"))
+    ## Create the final train data frame
+    train.data <- data.frame(x = train.mat[,1], 
+                             y = train.mat[,2], 
+                             z = train.mat[,3], 
+                             outcome = train.inside.torus)
+
+    ## Generate n.test random points along each of the axis for the test.set
+    set.seed(443)
+    x.test <- x + c(0, rnorm(n - 2, sd = xsd), 0)
+    y.test <- x + c(0, rnorm(n - 2, sd = xsd), 0)
+    z.test <- z + c(0, rnorm(n - 2, sd = zsd), 0)
+
+    # Sort the data points
+    x.test <- x.test[order(x.test)]
+    y.test <- y.test[order(y.test)]
+    z.test <- z.test[order(z.test)]
+
+    ## Create the mesh for 3D volumes
+    M.test <- mesh(x.test, y.test, z.test)
+
+    ## Create the test data matrix from the mesh and compute the outcome column
+    ## values (by checking if each 3-tuple (x, y and z) is inside the torus)
+    test.mat <- as.matrix(cbind(as.vector(M.test$x), 
+                                as.vector(M.test$y), 
+                                as.vector(M.test$z)))
+    test.inside.torus <- as.integer(apply(test.mat, 1, is.inside.torus))
+    test.inside.torus <- as.factor(ifelse(test.inside.torus > 0, "inside", 
+                                          "outside"))
+    
+    ## Create the final test data frame
+    test.data <- data.frame(x = test.mat[,1], 
+                            y = test.mat[,2], 
+                            z = test.mat[,3], 
+                            outcome = test.inside.torus)
+    
+    ## Create and return the output list
+    list(R = R, r = r, train.set = train.data, test.set = test.data)
+}
+
+## Generate the scatterplot using the scatterplot3d package
+    ## Generate the train data set
+    train.data <- make.simple.torus.data(n = 20)$train.set
+
+    par(mar = c(1, 1, 1, 1))
+    
+    ## Get the outcome column index
+    outcome.ndx = ncol(train.data)
+    
+    ## Create the subset of the original data which will be plotted
+    plot.data <- train.data[train.data[,outcome.ndx] == "inside",]
+    
+    ## Define the background color
+    bg.col <- c("#FF000088")
+    
+    ## Extract a sample of the raw data (4% of the data points) for the plot
+    set.seed(1443)
+    sample.plot.data <- plot.data[sample(1:nrow(plot.data), 
+                                         as.integer(0.5 * nrow(plot.data)), 
+                                         prob = rep(1 / nrow(plot.data), 
+                                                    nrow(plot.data))),]
+    
+    x.intv <- c(min(train.data[,1]) - 5, max(train.data[,1]) + 5)
+    y.intv <- c(min(train.data[,2]) - 5, max(train.data[,2]) + 5)
+    z.intv <- c(min(train.data[,3]) - 5, max(train.data[,3]) + 5)
+    
+    s3d <- with(sample.plot.data, scatterplot3d(z ~ x + y, angle = 55, 
+                                                scale.y = 0.75, type = "n", 
+                                                pch = 21, bg = bg.col, 
+                                                x.ticklabs = as.character(
+                                                    c(-20, -15, -10, -5, 0, 5, 
+                                                      10, 15, 20)), 
+                                                grid = F, xlim = x.intv, 
+                                                ylim = y.intv, zlim = z.intv, 
+                                                main = "Training set sample"))
+    
+    # Plot the density contour lines
+    xyDensity <- kde2d(sample.plot.data$x, sample.plot.data$y, 
+                       lims = c(x.intv, y.intv), n = 80)
+    clines.xy <- contourLines(xyDensity, nlevels = 8)
+        
+    xzDensity <- kde2d(sample.plot.data$x, sample.plot.data$z, 
+                       lims = c(x.intv, z.intv), n = 80)
+    clines.xz <- contourLines(xzDensity, nlevels = 8)
+        
+    yzDensity <- kde2d(sample.plot.data$y, sample.plot.data$z, 
+                       lims = c(y.intv, z.intv), n = 80)
+    clines.yz <- contourLines(yzDensity, nlevels = 8)
+        
+    lapply(clines.xy, function(cl) {
+        polygon(s3d$xyz.convert(cl$x, cl$y, rep(-10, length(cl$x))), 
+                lwd = 1, border = "#50505088")
+    })
+        
+    lapply(clines.xz, function(cl) {
+        polygon(s3d$xyz.convert(cl$x, rep(20, length(cl$x)), cl$y), 
+                lwd = 1, border = "#50505088")
+    })
+        
+    lapply(clines.yz, function(cl) {
+        polygon(s3d$xyz.convert(rep(-20, length(cl$x)), cl$x, cl$y), 
+                lwd = 1, border = "#50505088")
+    })
+    
+    # Now draw the actual points
+    mmm <- with(sample.plot.data, 
+         s3d$points3d(z ~ x + y, pch = 21, col = "black", bg = bg.col, 
+                      main = "Training set sample"))
+
+par(mfrow = c(1,1))
+```
+
+--- .class #id 
+
+## Model training
+
+- In order to preserve the responsiveness of the web interface, the only model 
+trained in the simplified web application is <b>Weighted k-Nearest Neighbors</b> 
+using the <span style="font-size: 16px; color: green;"><b>kknn</b></span> function in the <b>kknn</b> package
+- In this presentation, the <span style="font-size: 16px; color: green;"><b>train</b></span> function from the <b>caret</b> package is 
+used to train the folowing models:
+    - <b>Linear Discriminant Analysis</b> (<span style="font-size: 16px; color: green;"><b>method = "lda"</b></span>) - expected to perform 
+    poorly on the nonlinear and non-convex volume, LDA is used as the reference 
+    model
+    - <b>Decision Trees</b> (<span style="font-size: 16px; color: green;"><b>method = "rpart"</b></span>) - uses the classification trees 
+    routines from the <b>rpart</b> package
+    - <b>Random Forests</b> (<span style="font-size: 16px; color: green;"><b>method = "rf"</b></span>) - uses the <b>randomForest</b> package
+    - <b>Stochastic Gradient Boosting</b> (<span style="font-size: 16px; color: green;"><b>method = "gbm"</b></span>) - uses the <b>gbm</b> 
+    package
+- All <span style="font-size: 16px; color: green;"><b>train</b></span> function calls use the default parameters - models not optimized
+- The performance of the models is estimated on the test data set and the ROC 
+curves plotted using the <b>ROCR</b> package
+
+```{r, echo=FALSE, results='hide'}
+suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(rpart))
+suppressPackageStartupMessages(library(randomForest))
+suppressPackageStartupMessages(library(gbm))
+
+data.list <- make.simple.torus.data()
+train.data <- data.list$train.set
+test.data <- data.list$test.set
+```
+
+- The training and performance estimation of each model is performed with the 
+following sequence of calls:
+<ul>
+<li style="font-size: 16px; text-align: left; color: green;"><b>xxxFit <- train(outcome ~ ., data = train.data, method = "xxx")</b></li>
+<li style="font-size: 16px; text-align: left; color: green;"><b>xxxPred <- prediction(predict(xxxFit, test.data, type = "prob")<span class="Unicode">$</span>inside, test.data<span class="Unicode">$</span>outcome)</b></li>
+<li style="font-size: 16px; text-align: left; color: green;"><b>xxxPerf <- performance(xxxPred, "tpr", "fpr")</b></li>
+</ul>
+```{r, echo = FALSE, results='hide'}
+    ldaFit <- train(outcome ~ ., data = train.data, method = "lda")
+    ldaPred <- prediction(predict(ldaFit, test.data, type = "prob")$outside, test.data$outcome)
+    ldaPerf <- performance(ldaPred, "tpr", "fpr")
+    rpartFit <- train(outcome ~ ., data = train.data, method = "rpart")
+    rpartPred <- prediction(predict(rpartFit, test.data, type = "prob")$outside, test.data$outcome)
+    rpartPerf <- performance(rpartPred, "tpr", "fpr")
+    rfFit <- train(outcome ~ ., data = train.data, method = "rf", prox = T)
+    rfPred <- prediction(predict(rfFit, test.data, type = "prob")$outside, test.data$outcome)
+    rfPerf <- performance(rfPred, "tpr", "fpr")
+    boostgbmFit <- train(outcome ~ ., data = train.data, method = "gbm", verbose = F)
+    boostgbmPred <- prediction(predict(boostgbmFit, test.data, type = "prob")$outside, test.data$outcome)
+    boostgbmPerf <- performance(boostgbmPred, "tpr", "fpr")
+```
+
+--- .class #id 
+
+## Model performance and Prediction
+
+- Models' performance is illustrated in the plot containing the ROC curves (one 
+for each model)    
+```{r, echo=FALSE, results='hide', fig.height=5.5, fig.width=8}
+    par(mar = c(4, 4, 2, 4))
+    par(oma = c(3, 3, 2, 3))
+    plot(ldaPerf, col = "red", main = "Model ROC curves", 
+         xlab = "False Pos. Rate", ylab = "True Pos. Rate", lwd = 2, cex = 0.8)
+    legend("bottomright", legend = c("LDA", "Class. Tree", "Random Forest", 
+                                     "Boosting"), 
+           col = c("red", "orange", "green", "blue"), bty = "n", cex = 0.75, 
+           lwd = 2)
+    plot(rpartPerf, col = "orange", lwd = 2, add = T)
+    plot(rfPerf, col = "green", lwd = 2, add = T)
+    plot(boostgbmPerf, col = "blue", lwd = 2, add = T)
+```
+- The simplified web application (using a k-Nearest Neighbors model) allows the 
+user to specify a point in the 3D space via the 3 Cartesian coordinates (x, y 
+and z) and then displays the position of the point ("inside torus" or "outside 
+torus") as predicted by the model and the true position (computed using the 
+equation of the torus).

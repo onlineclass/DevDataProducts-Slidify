@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Guess-the-Torus</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Guess-the-Torus">
+  <meta name="author" content="Onlineclass">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/onlineclass.css"></link>
+<link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Guess-the-Torus</h1>
+    <h2>Nonlinear binary classification performance</h2>
+    <p>Onlineclass<br/>Data Science specialization student</p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Application overview</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li>&#39;<b><span style = "color:red">Guess-the-Torus</span></b>&#39; is a web application 
+for binary classification performance comparison of several machine learning 
+algorithms<br></li>
+<li>The published web application was developed for a single algorithm but 
+implements the functionality illustrated in this presentation<br></li>
+<li>The web application was developed in R using the &#39;<b>shiny</b>&#39; package and is 
+published at <a href="http://onlineclass.shinyapps.io/GuessTheTorus">http://onlineclass.shinyapps.io/GuessTheTorus</a><br></li>
+<li>Following is the sequence of tasks performed by the application:
+
+<ul>
+<li>Generate two data sets (one for model training and one for test)</li>
+<li>Plot a sample taken from the training data set</li>
+<li>Train several classification models on the training data set and plot the 
+ROC curves of the model performance estimated on the test data set</li>
+<li>Estimate the &#39;outcome&#39; for the user-specified predictor values using each 
+of the trained models and compare the predictions with the computed value of 
+the &#39;outcome&#39;</li>
+</ul></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="class" id="id" style="background:;">
+  <hgroup>
+    <h2>Data sets</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>The application generates two data sets, each having 4 columns and a 
+user-specified number rows. The first three columns (labeled &#39;x&#39;, &#39;y&#39; and &#39;z&#39;) 
+are the Cartesian coordinates of a point in the 3D space and the last column 
+(a factor labeled &#39;outcome&#39;) has a value of &#39;inside&#39; or &#39;outside&#39;, depending on 
+whether the point is inside or outside of the torus with equation 
+<span style = "color:blue"> $( R - \sqrt{x ^ 2 + y ^ 2} ) ^ 2 + z ^ 2 = r ^ 2$ 
+</span> and parameters <span style = "color:blue"> $r = 2$,  $R = 8$ </span>
+<img src="assets/fig/unnamed-chunk-1.png" alt="plot of chunk unnamed-chunk-1"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="class" id="id" style="background:;">
+  <hgroup>
+    <h2>Model training</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li>In order to preserve the responsiveness of the web interface, the only model 
+trained in the simplified web application is <b>Weighted k-Nearest Neighbors</b> 
+using the <span style="font-size: 16px; color: green;"><b>kknn</b></span> function in the <b>kknn</b> package</li>
+<li>In this presentation, the <span style="font-size: 16px; color: green;"><b>train</b></span> function from the <b>caret</b> package is 
+used to train the folowing models:
+
+<ul>
+<li><b>Linear Discriminant Analysis</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;lda&quot;</b></span>) - expected to perform 
+poorly on the nonlinear and non-convex volume, LDA is used as the reference 
+model</li>
+<li><b>Decision Trees</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;rpart&quot;</b></span>) - uses the classification trees 
+routines from the <b>rpart</b> package</li>
+<li><b>Random Forests</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;rf&quot;</b></span>) - uses the <b>randomForest</b> package</li>
+<li><b>Stochastic Gradient Boosting</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;gbm&quot;</b></span>) - uses the <b>gbm</b> 
+package</li>
+</ul></li>
+<li>All <span style="font-size: 16px; color: green;"><b>train</b></span> function calls use the default parameters - models not optimized</li>
+<li><p>The performance of the models is estimated on the test data set and the ROC 
+curves plotted using the <b>ROCR</b> package</p></li>
+<li><p>The training and performance estimation of each model is performed with the 
+following sequence of calls:</p>
+
+<ul>
+<li style="font-size: 16px; text-align: left; color: green;"><b>xxxFit <- train(outcome ~ ., data = train.data, method = "xxx")</b></li>
+<li style="font-size: 16px; text-align: left; color: green;"><b>xxxPred <- prediction(predict(xxxFit, test.data, type = "prob")<span class="Unicode">$</span>inside, test.data<span class="Unicode">$</span>outcome)</b></li>
+<li style="font-size: 16px; text-align: left; color: green;"><b>xxxPerf <- performance(xxxPred, "tpr", "fpr")</b></li>
+</ul></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="class" id="id" style="background:;">
+  <hgroup>
+    <h2>Model performance and Prediction</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li>Models&#39; performance is illustrated in the plot containing the ROC curves (one 
+for each model)<br>
+<img src="assets/fig/unnamed-chunk-4.png" alt="plot of chunk unnamed-chunk-4"> </li>
+<li>The simplified web application (using a k-Nearest Neighbors model) allows the 
+user to specify a point in the 3D space via the 3 Cartesian coordinates (x, y 
+and z) and then displays the position of the point (&quot;inside torus&quot; or &quot;outside 
+torus&quot;) as predicted by the model and the true position (computed using the 
+equation of the torus).</li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Application overview'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Data sets'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='Model training'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='Model performance and Prediction'>
+         4
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- MathJax: Fall back to local if CDN offline but local image fonts are not supported (saves >100MB) -->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        processEscapes: true
+      }
+    });
+  </script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <!-- <script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script> -->
+  <script>window.MathJax || document.write('<script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS":{imageFont:null}});<\/script><script src="libraries/widgets/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"><\/script>')
+</script>
+<!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
