@@ -38,8 +38,9 @@ user-specified number rows. The first three columns (labeled 'x', 'y' and 'z')
 are the Cartesian coordinates of a point in the 3D space and the last column 
 (a factor labeled 'outcome') has a value of 'inside' or 'outside', depending on 
 whether the point is inside or outside of the torus with equation 
-<span style = "color:blue"> $\( R - \sqrt{x ^ 2 + y ^ 2} \) ^ 2 + z ^ 2 = r ^ 2$ 
+<span style = "color:blue">$( R - \sqrt{x ^ 2 + y ^ 2} ) ^ 2 + z ^ 2 = r ^ 2$ 
 </span> and parameters <span style = "color:blue"> $r = 2$,  $R = 8$ </span>
+
 ![plot of chunk unnamed-chunk-1](assets/fig/unnamed-chunk-1.png) 
 
 --- .class #id 
@@ -54,7 +55,7 @@ used to train the folowing models:
     - <b>Linear Discriminant Analysis</b> (<span style="font-size: 16px; color: green;"><b>method = "lda"</b></span>) - expected to perform 
     poorly on the nonlinear and non-convex volume, LDA is used as the reference 
     model
-    - <b>Decision Trees</b> (<span style="font-size: 16px; color: green;"><b>method = "rpart"</b></span>) - uses the classification trees 
+    - <b>Classification Trees</b> (<span style="font-size: 16px; color: green;"><b>method = "rpart"</b></span>) - uses the classification trees 
     routines from the <b>rpart</b> package
     - <b>Random Forests</b> (<span style="font-size: 16px; color: green;"><b>method = "rf"</b></span>) - uses the <b>randomForest</b> package
     - <b>Stochastic Gradient Boosting</b> (<span style="font-size: 16px; color: green;"><b>method = "gbm"</b></span>) - uses the <b>gbm</b> 

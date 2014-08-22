@@ -82,9 +82,10 @@ user-specified number rows. The first three columns (labeled &#39;x&#39;, &#39;y
 are the Cartesian coordinates of a point in the 3D space and the last column 
 (a factor labeled &#39;outcome&#39;) has a value of &#39;inside&#39; or &#39;outside&#39;, depending on 
 whether the point is inside or outside of the torus with equation 
-<span style = "color:blue"> $( R - \sqrt{x ^ 2 + y ^ 2} ) ^ 2 + z ^ 2 = r ^ 2$ 
-</span> and parameters <span style = "color:blue"> $r = 2$,  $R = 8$ </span>
-<img src="assets/fig/unnamed-chunk-1.png" alt="plot of chunk unnamed-chunk-1"> </p>
+<span style = "color:blue">\(( R - \sqrt{x ^ 2 + y ^ 2} ) ^ 2 + z ^ 2 = r ^ 2\) 
+</span> and parameters <span style = "color:blue"> \(r = 2\),  \(R = 8\) </span></p>
+
+<p><img src="assets/fig/unnamed-chunk-1.png" alt="plot of chunk unnamed-chunk-1"> </p>
 
   </article>
   <!-- Presenter Notes -->
@@ -106,7 +107,7 @@ used to train the folowing models:
 <li><b>Linear Discriminant Analysis</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;lda&quot;</b></span>) - expected to perform 
 poorly on the nonlinear and non-convex volume, LDA is used as the reference 
 model</li>
-<li><b>Decision Trees</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;rpart&quot;</b></span>) - uses the classification trees 
+<li><b>Classification Trees</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;rpart&quot;</b></span>) - uses the classification trees 
 routines from the <b>rpart</b> package</li>
 <li><b>Random Forests</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;rf&quot;</b></span>) - uses the <b>randomForest</b> package</li>
 <li><b>Stochastic Gradient Boosting</b> (<span style="font-size: 16px; color: green;"><b>method = &quot;gbm&quot;</b></span>) - uses the <b>gbm</b> 
